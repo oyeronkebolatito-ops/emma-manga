@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>emma — manga reader</title>
+<style>
+  :root {
+    --bg: #0e0e10;
+    --surface: #1a1a1e;
+    --text: #e6e6e6;
+    --muted: #9a9a9a;
+    --accent: #f5f5f5;
+    --shadow: rgba(0,0,0,0.4);
+  }
+  html.light {
+    --bg: #f7f7f8;
+    --surface: #ffffff;
+    --text: #1a1a1e;
+    --muted: #6b6b6b;
+    --accent: #1a1a1e;
+    --shadow: rgba(0,0,0,0.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    transition: background 0.4s ease, color 0.4s ease;
+  }
+
+  /* Floating sticky header */
+  header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 20px;
+    background: color-mix(in srgb, var(--surface) 85%, transparent);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid color-mix(in srgb, var(--text) 8%, transparent);
+    transition: background 0.4s ease;
+  }
+  .header-left { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); }
+  .theme-toggle {
+    background: transparent;
+    border: 1px solid color-mix(in srgb, var(--text) 20%, transparent);
+    color: var(--text);
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.3s ease;
+  }
+  .theme-toggle:hover { background: color-mix(in srgb, var(--text) 10%, transparent); transform: rotate(15deg); }
+  .theme-toggle svg { width: 18px; height: 18px; }
+  .brand {
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--accent);
+  }
+
+  /* Reader canvas */
+  .reader {
+    max-width: 820px;
+    margin: 0 auto;
+    padding-top: 64px;
+    height: 100vh;
+    overflow-y: auto;
+    scroll-snap-type: y mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+  .page { position: relative; width: 100%; scroll-snap-align: start; scroll-snap-stop: always; line-height: 0; }
+  .page .title {
+    position: absolute; top: 16px; left: 16px; z-index: 2;
+    background: color-mix(in srgb, var(--surface) 85%, transparent);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    color: var(--text); padding: 6px 12px; border-radius: 999px;
+    font-size: 0.8rem; font-weight: 600;
+    border: 1px solid color-mix(in srgb, var(--text) 12%, transparent);
+  }
+  .page img {
+    display: block;
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+    background: #000;
+  }
+
+  /* Page indicator */
+  .indicator {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 50;
+    background: color-mix(in srgb, var(--surface) 85%, transparent);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: var(--text);
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border: 1px solid color-mix(in srgb, var(--text) 12%, transparent);
+    transition: opacity 0.3s ease;
+  }
+
+  @media (max-width: 600px) {
+    .reader { max-width: 100%; }
+    header { padding: 10px 14px; }
+    .header-left { left: 14px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="header-left">
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+      <svg id="sunIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      <svg id="moonIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+  <div class="brand">emma</div>
+</header>
+
+<main class="reader" id="reader">
+  <div class="page"><span class="title">Demon Slayer</span><img src="image/Demon-slayer.jpeg" alt="Demon Slayer" loading="lazy"></div>
+  <div class="page"><span class="title">Jujutsu Kaisen</span><img src="image/Jujutsu-kaisen.jpeg" alt="Jujutsu Kaisen" loading="lazy"></div>
+  <div class="page"><span class="title">Naruto</span><img src="image/naruto.jpeg" alt="Naruto" loading="lazy"></div>
+  <div class="page"><span class="title">Naruto Shippuden</span><img src="image/Naruto-shippuden.jpeg" alt="Naruto Shippuden" loading="lazy"></div>
+  <div class="page"><span class="title">One Piece</span><img src="image/onepiece.jpeg" alt="One Piece" loading="lazy"></div>
+  <div class="page"><span class="title">One Piece</span><img src="image/One-piece.jpeg" alt="One Piece" loading="lazy"></div>
+</main>
+
+<div class="indicator" id="indicator">Page 1 / 6</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script>
+  // === GSAP Smooth Scroll Animations ===
+  gsap.registerPlugin(ScrollTrigger);
+  // Each page fades/slides in as it enters the reader viewport.
+  gsap.utils.toArray('.page').forEach((page, i) => {
+    gsap.fromTo(page,
+      { opacity: 0, y: 60, scale: 0.97 },
+      {
+        opacity: 1, y: 0, scale: 1,
+        duration: 0.9,
+        ease: 'power3.out',
+        scrollTrigger: {
+          trigger: page,
+          scroller: '#reader',
+          start: 'top 90%',
+          end: 'top 30%',
+          toggleActions: 'play none none reverse'
+        }
+      }
+    );
+  });
+</script>
+  // Reads persisted preference (default dark). Toggles .light class on <html>.
+  const root = document.documentElement;
+  const toggle = document.getElementById('themeToggle');
+  const sun = document.getElementById('sunIcon');
+  const moon = document.getElementById('moonIcon');
+  const saved = localStorage.getItem('emma-theme');
+  if (saved === 'light') { root.classList.add('light'); sun.style.display='none'; moon.style.display='block'; }
+
+  toggle.addEventListener('click', () => {
+    const isLight = root.classList.toggle('light');
+    sun.style.display = isLight ? 'none' : 'block';
+    moon.style.display = isLight ? 'block' : 'none';
+    localStorage.setItem('emma-theme', isLight ? 'light' : 'dark');
+  });
+
+  // === Scroll Detection & Page Indicator ===
+  // The reader container scrolls; each .page snaps via scroll-snap.
+  // We compute current page by finding which page's top is closest to viewport top.
+  const reader = document.getElementById('reader');
+  const pages = Array.from(document.querySelectorAll('.page'));
+  const indicator = document.getElementById('indicator');
+  const total = pages.length;
+
+  function updateIndicator() {
+    const rect = reader.getBoundingClientRect();
+    let current = 0;
+    for (let i = pages.length - 1; i >= 0; i--) {
+      const pr = pages[i].getBoundingClientRect();
+      if (pr.top <= rect.top + 40) { current = i; break; }
+    }
+    const title = pages[current].querySelector('.title').textContent;
+    indicator.textContent = `Page ${current + 1} / ${total} — ${title}`;
+  }
+  reader.addEventListener('scroll', updateIndicator, { passive: true });
+  updateIndicator();
+
+  // === Keyboard Navigation ===
+  // Arrow keys / Spacebar scroll by one viewport (page) within the reader.
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown' || e.key === ' ' || e.key === 'PageDown') {
+      e.preventDefault();
+      reader.scrollBy({ top: reader.clientHeight, behavior: 'smooth' });
+    } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+      e.preventDefault();
+      reader.scrollBy({ top: -reader.clientHeight, behavior: 'smooth' });
+    } else if (e.key === 'Home') {
+      reader.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (e.key === 'End') {
+      reader.scrollTo({ top: reader.scrollHeight, behavior: 'smooth' });
+    }
+  });
+</script>
+</body>
+</html>
